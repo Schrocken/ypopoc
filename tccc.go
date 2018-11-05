@@ -105,6 +105,7 @@ func main() {
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
         return shim.Success(nil)
 }
+
 //Invoke - Our entry point for invocations
 // ===========================
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
@@ -149,13 +150,13 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		// Query Tasks by ReceivingMemberID
                 return t.queryTasksByReceivingMemberID(stub, args)        
 
-	case "queryLocation":
-	        // read members by locations`
-                return t.queryLocation(stub, args)
+        case "queryContactsByContactMemberID":
+		// Query Active Contacts by ReceivingMemberID
+                return t.queryContactsByContactMemberID(stub, args)
 
-        case "databynotdeleted":
-		//passes rich query with use_index to richqueryhandler
-		return t.databynotdeleted(stub, args)
+        case "queryMeetingsByContactMemberID":
+		// Query Active Contacts by ReceivingMemberID
+                return t.queryMeetingsByContactMemberID(stub, args)
 
         default:
                 //error
@@ -163,6 +164,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return shim.Error("Received unknown function invocation: " + function + ":concl")
         }
 }
+
 // ===============================================================
 // Member functions - read/write a member from/to chaincode state
 // ===============================================================
@@ -361,6 +363,18 @@ func (t *SimpleChaincode) initContact(stub shim.ChaincodeStubInterface, args []s
                 return shim.Error(err.Error())
         }
 
+        //queryContactsByContactMemberID
+	indexName := "contactmemberid~contacts"
+        contactmemberidContactsIndexKey, err := stub.CreateCompositeKey(indexName, []string{contact.ContactMemberId, contact.ContactId})
+        if err != nil {
+                return shim.Error(err.Error())
+        }
+        //  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the marble.
+        //  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
+        value := []byte{0x00}
+        stub.PutPrivateData("collectionContacts", contactmemberidContactsIndexKey, value)        
+
+
         // ==== Contact saved. Return success ====
         fmt.Println("- end init contact")
         return shim.Success(nil)
@@ -405,7 +419,6 @@ func (t *SimpleChaincode) initMeeting(stub shim.ChaincodeStubInterface, args []s
         IsDeleted := strings.ToLower(args[8])
         //Contacts := strings.ToLower(args[4])
 
-
         // ==== Create meeting object and marshal to JSON ====
         objectType := "meetingInfo"
         meeting := &meeting{objectType, MeetingId, RequestingMemberId, ContactMemberId, OriginatingTaskId, MeetingDate, MeetingDurationMinutes, MeetingReason, ShowMeetingFlag, IsDeleted}
@@ -419,6 +432,17 @@ func (t *SimpleChaincode) initMeeting(stub shim.ChaincodeStubInterface, args []s
         if err != nil {
                 return shim.Error(err.Error())
         }
+
+        //queryMeetingsByContactMemberID
+	indexName := "contactmemberid~meetings"
+        contactmemberidMeetingsIndexKey, err := stub.CreateCompositeKey(indexName, []string{meeting.ContactMemberId, meeting.MeetingId})
+        if err != nil {
+                return shim.Error(err.Error())
+        }
+        //  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the marble.
+        //  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
+        value := []byte{0x00}
+        stub.PutPrivateData("collectionMeetings", contactmemberidMeetingsIndexKey, value)
 
         // ==== Meeting saved. Return success ====
         fmt.Println("- end init meeting")
@@ -521,6 +545,34 @@ func (t *SimpleChaincode) queryTasksByReceivingMemberID(stub shim.ChaincodeStubI
         receivingmemberid := strings.ToLower(args[0])
         queryString := fmt.Sprintf("{\"selector\":{\"docType\":\"taskInfo\",\"receivingmemberid\":\"%s\"}}", receivingmemberid)
         queryResults, err := getQueryResultForQueryString(stub, "collectionTasks", queryString)
+        if err != nil {
+                return shim.Error(err.Error())
+        }
+        return shim.Success(queryResults)
+}
+
+//queryContactsByContactMemberID
+func (t *SimpleChaincode) queryContactsByContactMemberID(stub shim.ChaincodeStubInterface, args []string) pb.Response {        
+        if len(args) < 1 {
+                return shim.Error("Incorrect number of arguments. Expecting 1")
+        }
+        contactmemberid := strings.ToLower(args[0])
+        queryString := fmt.Sprintf("{\"selector\":{\"docType\":\"contactInfo\",\"contactmemberid\":\"%s\"}}", contactmemberid)
+        queryResults, err := getQueryResultForQueryString(stub, "collectionContacts", queryString)
+        if err != nil {
+                return shim.Error(err.Error())
+        }
+        return shim.Success(queryResults)
+}
+
+//queryMeetingsByContactMemberID
+func (t *SimpleChaincode) queryMeetingsByContactMemberID(stub shim.ChaincodeStubInterface, args []string) pb.Response {        
+        if len(args) < 1 {
+                return shim.Error("Incorrect number of arguments. Expecting 1")
+        }
+        contactmemberid := strings.ToLower(args[0])
+        queryString := fmt.Sprintf("{\"selector\":{\"docType\":\"meetingInfo\",\"contactmemberid\":\"%s\"}}", contactmemberid)
+        queryResults, err := getQueryResultForQueryString(stub, "collectionMeetings", queryString)
         if err != nil {
                 return shim.Error(err.Error())
         }
