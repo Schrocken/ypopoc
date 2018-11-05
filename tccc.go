@@ -158,6 +158,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		// Query Active Contacts by ReceivingMemberID
                 return t.queryMeetingsByContactMemberID(stub, args)
 
+        case "queryAllMembers":
+		// Query Active Contacts by ReceivingMemberID
+                return t.queryAllMembers(stub)
+
         default:
                 //error
                 fmt.Println("invoke did not find func: " + function)
@@ -218,12 +222,23 @@ func (t *SimpleChaincode) initMember(stub shim.ChaincodeStubInterface, args []st
         if err != nil {
                 return shim.Error(err.Error())
         }
+
         //  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the marble.
         //  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
         value := []byte{0x00}
         stub.PutPrivateData("collectionMembers",locationMemberIdIndexKey, value)
 
-                // ==== Member saved. Return success ====
+        //queryAllMembers
+	//indexName := "memberid"
+        MemberIdIndexKey, err := stub.CreateCompositeKey(indexName, []string{member.MemberId})
+        if err != nil {
+                return shim.Error(err.Error())
+        }        
+
+        //value := []byte{0x00}
+        stub.PutPrivateData("collectionMembers", MemberIdIndexKey, value)
+
+        // ==== Member saved. Return success ====
         fmt.Println("- end init member")
         return shim.Success(nil)
 }
@@ -573,6 +588,20 @@ func (t *SimpleChaincode) queryMeetingsByContactMemberID(stub shim.ChaincodeStub
         contactmemberid := strings.ToLower(args[0])
         queryString := fmt.Sprintf("{\"selector\":{\"docType\":\"meetingInfo\",\"contactmemberid\":\"%s\"}}", contactmemberid)
         queryResults, err := getQueryResultForQueryString(stub, "collectionMeetings", queryString)
+        if err != nil {
+                return shim.Error(err.Error())
+        }
+        return shim.Success(queryResults)
+}
+
+//queryAllMembers
+func (t *SimpleChaincode) queryAllMembers(stub shim.ChaincodeStubInterface) pb.Response {        
+        //if len(args) < 1 {
+        //        return shim.Error("Incorrect number of arguments. Expecting 1")
+        //}
+        //contactmemberid := strings.ToLower(args[0])
+        queryString := fmt.Sprintf("{\"selector\":{\"docType\":\"MemberInfo\"}}")
+        queryResults, err := getQueryResultForQueryString(stub, "collectionMembers", queryString)
         if err != nil {
                 return shim.Error(err.Error())
         }
