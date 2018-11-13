@@ -176,14 +176,14 @@ func (t *SimpleChaincode) initMember(stub shim.ChaincodeStubInterface, args []st
         var err error
 
         MemberId := strings.ToLower(args[0])
-        MemberName := strings.ToLower(args[1])
+        MemberName := args[1]
         MembershipDate := strings.ToLower(args[2])
-        MemberAbout := strings.ToLower(args[3])
-        MemberShortBio := strings.ToLower(args[4])
-        MemberLocation := strings.ToLower(args[5])
+        MemberAbout := args[3]
+        MemberShortBio := args[4]
+        MemberLocation := args[5]
         MemberPhoneNumber := strings.ToLower(args[6])
         MemberEmail := strings.ToLower(args[7])
-        MemberSocialAccount := strings.ToLower(args[8])
+        MemberSocialAccount := args[8]
         SharingDefaultMemDate := strings.ToLower(args[9])
         SharingDefaultEmail := strings.ToLower(args[10])
         SharingDefaultPhone := strings.ToLower(args[11])
@@ -429,7 +429,7 @@ func (t *SimpleChaincode) initMeeting(stub shim.ChaincodeStubInterface, args []s
         OriginatingTaskId := strings.ToLower(args[3])
         MeetingDate := strings.ToLower(args[4])
         MeetingDurationMinutes := strings.ToLower(args[5])
-        MeetingReason := strings.ToLower(args[6])
+        MeetingReason := args[6]
         ShowMeetingFlag := strings.ToLower(args[7])
         IsDeleted := strings.ToLower(args[8])
         //Contacts := strings.ToLower(args[4])
