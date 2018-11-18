@@ -54,6 +54,15 @@ app.get('/queryContactsByContactMemberID/:id',(request,response) => {
     response.send({'success':'OK','result':r})
     });
 
+//queryContactsByRequestingMemberID
+app.get('/queryContactsByRequestingMemberID/:id',(request,response) => {
+    var cmd = 'docker exec cli peer chaincode query -C ypochannel -n tccc -c \'{"Args":["queryContactsByRequestingMemberID","'+request.params.id+'"]}\''
+    console.log(cmd)
+    var r = shl.exec(cmd)
+    response.send({'success':'OK','result':r})
+    });
+
+
 //queryMeetingsByContactMemberID
 app.get('/queryMeetingsByContactMemberID/:id',(request,response) => {
     var cmd = 'docker exec cli peer chaincode query -C ypochannel -n tccc -c \'{"Args":["queryMeetingsByContactMemberID","'+request.params.id+'"]}\''
